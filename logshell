@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Removes any unwanted characters from a user input line.
+clean_line() {
+    local str="$1"
+    
+    # Cleans line of ^M (new line) characters.
+    str=$(echo "$str" | sed 's/\r//g')
+    
+    # This loop cleans up backspaces in user input, so we only log the final characters without the ^H clutter.
+   local result=""
+    for ((i=0; i<${#str}; i++)); do
+        local char="${str:$i:1}"
+        if [ "$char" = $'\x08' ]; then
+            result="${result%?}"
+        else
+            result+="$char"
+        fi
+    done
+
+    echo "$result"
+}
+
+# Intructiosn on how to use the program alongisde netcat.
+if [ "$#" -lt 1 ]; then
+    echo "Usage: logshell <netcat command>"
+    exit 1
+fi
+
+# Directory where log files will be stored.
+# You can customize this as needed.
+LOGDIR="/tmp"
+
+# Records the session output and simultaneously processes it line by line.
+script -q -c "$*" /tmp/record.log | tee >(while IFS= read -r line; do
+    # Waits for the ncat connection string to extract the target's IP and initiate logging.
+    # TODO: Enhance to support multiple listeners and clients.
+    if [[ $line =~ Ncat:\ Connection\ from\ .* ]]; then
+        # Extracts target IP.
+        target_ip=$(echo "$line" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+
+        # Creates log file.
+        log_file="$LOGDIR/$target_ip.log"
+        
+        # Writes a header indicating the start of a new session along with a timestamp.
+        echo "=============================================================" >> "$log_file"
+        echo "Shell session initiated at: $(date +"%Y-%m-%d %T")" >> "$log_file"
+        echo "=============================================================" >> "$log_file"
+        continue
+    elif [[ -n $log_file ]]; then
+        # Cleans line before logging it alonside the timestamp.
+        line=$(clean_line "$line")
+        echo "($(date +"%T")) $line" >> "$log_file"
+    fi
+# Removes the temporary output file after the session is done.
+done; rm /tmp/record.log)
