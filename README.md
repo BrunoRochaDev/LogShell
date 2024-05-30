@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>📜 LogShell 🐚</h1>
+  <h1>🪵 LogShell 🐚</h1>
   <br/>
 </div>
 
