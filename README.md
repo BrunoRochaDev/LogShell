@@ -1,6 +1,11 @@
-# 📜 LogShell 🐚
+<div align="center">
+  <h1>📜 LogShell 🐚</h1>
+  <br/>
+</div>
 
-A bash script for logging network sessions established via netcat, such as reverse shells.
+LogShell is bash script for logging network sessions established via netcat, such as reverse shells.
+
+It ensures you always have a track of every command ran on a target to look back later.
 
 ## Features
 
