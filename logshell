@@ -1,5 +1,24 @@
 #!/bin/bash
 
+## Function that will check if a shell connection has been made so that logging can start.
+check_connection() {
+    local command="$2"
+
+    # Checks for Ncat connection string...
+    if [[ $1 =~ Ncat:\ Connection\ from\ .* ]]; then
+        target_ip=$(echo "$1" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+        return 0
+    fi
+
+    # Check if the command contains "ssh"
+    if [[ $command == *"ssh"* ]]; then
+        return 0 # Condition met
+    fi
+
+    # No connection was made.
+    return 1
+}
+
 # Removes any unwanted characters from a user input line.
 clean_line() {
     local str="$1"
@@ -31,13 +50,15 @@ fi
 # You can customize this as needed.
 LOGDIR="/tmp"
 
+connection_established=false
+target_ip=''
+
 # Records the session output and simultaneously processes it line by line.
 script -q -c "$*" /tmp/record.log | tee >(while IFS= read -r line; do
-    # Waits for the ncat connection string to extract the target's IP and initiate logging.
-    # TODO: Enhance to support multiple listeners and clients.
-    if [[ $line =~ Ncat:\ Connection\ from\ .* ]]; then
-        # Extracts target IP.
-        target_ip=$(echo "$line" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+    # Waits until a connection is established to start logging.
+    if ! $connection_established && check_connection "$line" "$*"; then
+        # Will start logging now.
+        connection_established=true
 
         # Creates log file.
         log_file="$LOGDIR/$target_ip.log"
