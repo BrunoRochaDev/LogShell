@@ -39,7 +39,7 @@ chmod +x logshell
 mv ./logshell /usr/bin
 ```
 
-5. Run the script with your netcat command:
+5. Run the script with your SSH / netcat command:
 ```bash
 # Initiating SSH session logging
 logshell ssh user@127.0.0.1
