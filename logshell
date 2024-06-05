@@ -4,15 +4,19 @@
 check_connection() {
     local command="$2"
 
-    # Checks for Ncat connection string...
-    if [[ $1 =~ Ncat:\ Connection\ from\ .* ]]; then
-        target_ip=$(echo "$1" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+    # Check if the command contains "ssh"...
+    if [[ $command == *"ssh"* ]]; then
+        # if so, get IP / hostname from the command itself.
+        target=$(echo "$command" | grep -oP '(?<=@)[^\s]+')
+        client='SSH'
         return 0
     fi
 
-    # Check if the command contains "ssh"
-    if [[ $command == *"ssh"* ]]; then
-        return 0 # Condition met
+    # Checks for Ncat connection string...
+    if [[ $1 =~ Ncat:\ Connection\ from\ .* ]]; then
+        target=$(echo "$1" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+        client='Ncat'
+        return 0
     fi
 
     # No connection was made.
@@ -51,24 +55,34 @@ fi
 LOGDIR="/tmp"
 
 connection_established=false
-target_ip=''
+client=''
+target=''
 
 # Records the session output and simultaneously processes it line by line.
 script -q -c "$*" /tmp/record.log | tee >(while IFS= read -r line; do
     # Waits until a connection is established to start logging.
     if ! $connection_established && check_connection "$line" "$*"; then
+        # Set log file location.
+        log_file="$LOGDIR/$target.log"
+
+        # Check if the file exists and if we don't have write permissions...
+        if [ -e "$log_file" ] && ! [ -w "$log_file" ]; then
+            # If log file exists but we can't write to it, print error and don't log.
+            echo "Error: Log file already exists but you don't have write permissions on it. Perhaps you previously used LogShell with sudo?"
+            echo "Session is NOT being logged. Either delete log file at $log_file or grant write permissions."
+            echo
+            continue 
+        fi
+
         # Will start logging now.
         connection_established=true
-
-        # Creates log file.
-        log_file="$LOGDIR/$target_ip.log"
         
         # Writes a header indicating the start of a new session along with a timestamp.
         echo "=============================================================" >> "$log_file"
-        echo "Shell session initiated at: $(date +"%Y-%m-%d %T")" >> "$log_file"
+        echo "Shell session via $client initiated at: $(date +"%Y-%m-%d %T")" >> "$log_file"
         echo "=============================================================" >> "$log_file"
         continue
-    elif [[ -n $log_file ]]; then
+    elif $connection_established; then
         # Cleans line before logging it alonside the timestamp.
         line=$(clean_line "$line")
         echo "($(date +"%T")) $line" >> "$log_file"
