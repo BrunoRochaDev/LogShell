@@ -1,6 +1,8 @@
 <div align="center">
   <h1>🪵 LogShell 🐚</h1>
   <br/>
+  <p><i>Shell script for logging remote shells, by <a href="https://www.brunorochamoura.com/about/">BRM</a>.</i></p>
+  <br />
 </div>
 
 LogShell is bash script for logging network sessions established via netcat or SSH, such as reverse shells.
